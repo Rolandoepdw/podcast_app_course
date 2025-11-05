@@ -39,7 +39,7 @@ class _PodcastsPageState extends State<PodcastsPage> {
               itemBuilder: (context, index) {
                 final podcast = podcasts![index];
                 return PodcastItem(podcast: podcast);
-              } ,
+              },
             ),
     );
   }
