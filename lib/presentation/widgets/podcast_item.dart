@@ -43,7 +43,6 @@ class _PodcastItemState extends State<PodcastItem> {
                 widget.podcast.audio,
                 path,
                 onReceiveProgress: (count, total) {
-                  debugPrint('count: $count, total: $total');
                   setState(() => progress = count / total);
                 },
               );
