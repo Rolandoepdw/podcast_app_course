@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:podcast_app_course/domain/entities/podcast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,31 +32,6 @@ class PodcastApi {
         return jsonDecode(
           podcasts,
         ).map((json) => Podcast.fromJson(json)).toList();
-      }
-    }
-  }
-
-  Future<void> downloadPodcast(
-    String url,
-    String fileName, {
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final appStorage = await getApplicationDocumentsDirectory();
-    final sharedPreferences = await SharedPreferences.getInstance();
-    final downloadPath = '${appStorage.path}/Podcast App Course/$fileName';
-
-    if (await InternetConnectionChecker.instance.hasConnection) {
-      await dio.download(
-        url,
-        downloadPath,
-        onReceiveProgress: onReceiveProgress,
-      );
-      await sharedPreferences.setString('path', downloadPath);
-      await OpenFile.open(downloadPath, type: 'audio/x-mpeg');
-    } else {
-      final savedPath = sharedPreferences.getString('path');
-      if (savedPath == downloadPath) {
-        await OpenFile.open(savedPath, type: 'audio/x-mpeg');
       }
     }
   }

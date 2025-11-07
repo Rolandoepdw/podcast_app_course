@@ -1,8 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:podcast_app_course/domain/entities/podcast.dart';
-import 'package:podcast_app_course/services/api/podcast_api.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:podcast_app_course/services/download/download_service.dart';
 
 class PodcastItem extends StatefulWidget {
   final Podcast podcast;
@@ -14,14 +13,23 @@ class PodcastItem extends StatefulWidget {
 }
 
 class _PodcastItemState extends State<PodcastItem> {
-  final podcastApi = PodcastApi();
+  final downloadService = DownloadService();
   double progress = 0.0;
-  String? savedPath;
+  bool isDownloaded = false;
 
-  Future<String?> getSavedPath() async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    setState(() {});
-    return savedPath = sharedPreferences.getString('path');
+  @override
+  void initState() {
+    super.initState();
+    _checkIfDownloaded();
+  }
+
+  void _checkIfDownloaded() async {
+    final downloaded = await downloadService.isPodcastDownloaded(
+      widget.podcast,
+    );
+    setState(() {
+      isDownloaded = downloaded;
+    });
   }
 
   @override
@@ -29,25 +37,27 @@ class _PodcastItemState extends State<PodcastItem> {
     return ListTile(
       title: Text(widget.podcast.title),
       trailing: Stack(
+        alignment: Alignment.center,
         children: [
-          Positioned.fill(
-            child: CircularProgressIndicator.adaptive(value: progress),
-          ),
+          if (progress > 0 && progress < 1)
+            CircularProgressIndicator.adaptive(value: progress),
           IconButton(
-            icon: savedPath == null
-                ? const Icon(Icons.download)
-                : const Icon(Icons.play_arrow),
+            icon: isDownloaded
+                ? const Icon(Icons.play_arrow)
+                : const Icon(Icons.download),
             onPressed: () async {
-              final path = '${widget.podcast.title}/${widget.podcast.id}.mp3';
-              await podcastApi.downloadPodcast(
-                widget.podcast.audio,
-                path,
-                onReceiveProgress: (count, total) {
-                  setState(() => progress = count / total);
-                },
-              );
-              await getSavedPath();
-              setState(() => progress = 0.0);
+              if (isDownloaded) {
+                await downloadService.openPodcast(widget.podcast);
+              } else {
+                await downloadService.downloadPodcast(
+                  widget.podcast,
+                  onReceiveProgress: (count, total) {
+                    setState(() => progress = count / total);
+                  },
+                );
+                _checkIfDownloaded();
+                setState(() => progress = 0.0);
+              }
             },
           ),
         ],
